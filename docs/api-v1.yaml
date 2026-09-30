@@ -1,0 +1,507 @@
+openapi: 3.1.0
+info:
+  title: TaskFlow API
+  version: "1.0.0"
+  description: |
+    Contrato v1 de TaskFlow, diseñado **top-down** en s09 (antes de implementarlo en s10).
+    Convenciones:
+      - Recursos como sustantivos en **plural** y en **español**.
+      - Versionado con prefijo **/v1**.
+      - Listados con **paginación** (limit/offset), **filtros** y **orden** por query params.
+      - Códigos de estado: 200 (ok), 201 (creado), 204 (sin contenido), 400 (pedido inválido),
+        404 (no encontrado), 422 (validación).
+    El cambio de estado se modela como acción explícita (`POST /v1/tareas/{id}/mover`),
+    manteniendo el nombre del endpoint introducido en s05.
+
+servers:
+  - url: /v1
+
+tags:
+  - name: proyectos
+  - name: tareas
+  - name: comentarios
+  - name: usuarios
+  - name: etiquetas
+
+paths:
+  /proyectos:
+    get:
+      tags: [proyectos]
+      summary: Listar proyectos
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+        - name: orden
+          in: query
+          schema: { type: string, example: "-created_at" }
+          description: Campo de orden; prefijo `-` para descendente.
+      responses:
+        "200":
+          description: Página de proyectos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaginaProyectos" }
+    post:
+      tags: [proyectos]
+      summary: Crear proyecto
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProyectoCrear" }
+      responses:
+        "201":
+          description: Proyecto creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Proyecto" }
+        "422": { $ref: "#/components/responses/ErrorValidacion" }
+
+  /proyectos/{proyecto_id}:
+    parameters:
+      - $ref: "#/components/parameters/proyecto_id"
+    get:
+      tags: [proyectos]
+      summary: Obtener un proyecto
+      responses:
+        "200":
+          description: Proyecto
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Proyecto" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+    patch:
+      tags: [proyectos]
+      summary: Actualizar un proyecto (parcial)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProyectoActualizar" }
+      responses:
+        "200":
+          description: Proyecto actualizado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Proyecto" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+        "422": { $ref: "#/components/responses/ErrorValidacion" }
+    delete:
+      tags: [proyectos]
+      summary: Eliminar un proyecto
+      responses:
+        "204": { description: Eliminado }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /proyectos/{proyecto_id}/tablero:
+    parameters:
+      - $ref: "#/components/parameters/proyecto_id"
+    get:
+      tags: [proyectos]
+      summary: Tablero del proyecto (tareas agrupadas por estado)
+      description: |
+        Vista de tablero con filtros, orden y paginación por columna. Es la vista estándar
+        que consume el frontend en s11-s12.
+      parameters:
+        - name: estado
+          in: query
+          schema: { $ref: "#/components/schemas/Estado" }
+          description: Filtra por estado (si se omite, devuelve las tres columnas).
+        - name: responsable_id
+          in: query
+          schema: { type: integer }
+        - name: etiqueta
+          in: query
+          schema: { type: string }
+          description: Filtra por nombre de etiqueta.
+        - name: orden
+          in: query
+          schema: { type: string, example: "-updated_at" }
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Tablero
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tablero" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /tareas:
+    get:
+      tags: [tareas]
+      summary: Listar tareas (con filtros/orden/paginación)
+      parameters:
+        - name: proyecto_id
+          in: query
+          schema: { type: integer }
+        - name: estado
+          in: query
+          schema: { $ref: "#/components/schemas/Estado" }
+        - name: responsable_id
+          in: query
+          schema: { type: integer }
+        - name: etiqueta
+          in: query
+          schema: { type: string }
+        - name: orden
+          in: query
+          schema: { type: string, example: "-created_at" }
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Página de tareas
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaginaTareas" }
+    post:
+      tags: [tareas]
+      summary: Crear tarea
+      description: El `id` lo asigna el servidor y el `estado` inicial es siempre `backlog`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TareaCrear" }
+      responses:
+        "201":
+          description: Tarea creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tarea" }
+        "404":
+          description: El proyecto o el responsable referenciado no existe
+        "422": { $ref: "#/components/responses/ErrorValidacion" }
+
+  /tareas/{tarea_id}:
+    parameters:
+      - $ref: "#/components/parameters/tarea_id"
+    get:
+      tags: [tareas]
+      summary: Obtener una tarea
+      responses:
+        "200":
+          description: Tarea
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tarea" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+    patch:
+      tags: [tareas]
+      summary: Actualizar una tarea (parcial); incluye asignar responsable y etiquetas
+      description: |
+        Actualiza campos editables de la tarea. **Asignar responsable** se hace acá,
+        enviando `responsable_id` (o `null` para desasignar). El **estado** NO se cambia
+        por acá: se usa `POST /tareas/{id}/mover`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TareaActualizar" }
+      responses:
+        "200":
+          description: Tarea actualizada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tarea" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+        "422": { $ref: "#/components/responses/ErrorValidacion" }
+    delete:
+      tags: [tareas]
+      summary: Eliminar una tarea
+      responses:
+        "204": { description: Eliminada }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /tareas/{tarea_id}/mover:
+    parameters:
+      - $ref: "#/components/parameters/tarea_id"
+    post:
+      tags: [tareas]
+      summary: Mover una tarea de estado (acción)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estado]
+              properties:
+                estado: { $ref: "#/components/schemas/Estado" }
+      responses:
+        "200":
+          description: Tarea movida
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Tarea" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+        "422": { $ref: "#/components/responses/ErrorValidacion" }
+
+  /tareas/{tarea_id}/comentarios:
+    parameters:
+      - $ref: "#/components/parameters/tarea_id"
+    get:
+      tags: [comentarios]
+      summary: Listar comentarios de una tarea
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Página de comentarios
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaginaComentarios" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+    post:
+      tags: [comentarios]
+      summary: Comentar una tarea
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ComentarioCrear" }
+      responses:
+        "201":
+          description: Comentario creado
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Comentario" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+        "422": { $ref: "#/components/responses/ErrorValidacion" }
+
+  /usuarios:
+    get:
+      tags: [usuarios]
+      summary: Listar usuarios (apoyo para asignar responsables)
+      parameters:
+        - $ref: "#/components/parameters/limit"
+        - $ref: "#/components/parameters/offset"
+      responses:
+        "200":
+          description: Página de usuarios
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PaginaUsuarios" }
+
+  /usuarios/{usuario_id}:
+    parameters:
+      - name: usuario_id
+        in: path
+        required: true
+        schema: { type: integer }
+    get:
+      tags: [usuarios]
+      summary: Obtener un usuario
+      responses:
+        "200":
+          description: Usuario
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Usuario" }
+        "404": { $ref: "#/components/responses/NoEncontrado" }
+
+  /etiquetas:
+    get:
+      tags: [etiquetas]
+      summary: Listar etiquetas (apoyo para clasificar tareas)
+      responses:
+        "200":
+          description: Lista de etiquetas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Etiqueta" }
+
+components:
+  parameters:
+    limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    offset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+    proyecto_id:
+      name: proyecto_id
+      in: path
+      required: true
+      schema: { type: integer }
+    tarea_id:
+      name: tarea_id
+      in: path
+      required: true
+      schema: { type: integer }
+
+  responses:
+    NoEncontrado:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    ErrorValidacion:
+      description: Error de validación
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+
+  schemas:
+    Estado:
+      type: string
+      enum: [backlog, "en progreso", hecho]
+
+    Error:
+      type: object
+      properties:
+        detail: { type: string }
+
+    Paginacion:
+      type: object
+      properties:
+        total: { type: integer }
+        limit: { type: integer }
+        offset: { type: integer }
+
+    Proyecto:
+      type: object
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        equipo_id: { type: integer }
+        descripcion: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    ProyectoCrear:
+      type: object
+      required: [nombre, equipo_id]
+      properties:
+        nombre: { type: string }
+        equipo_id: { type: integer }
+        descripcion: { type: string, nullable: true }
+    ProyectoActualizar:
+      type: object
+      properties:
+        nombre: { type: string }
+        descripcion: { type: string, nullable: true }
+
+    Tarea:
+      type: object
+      properties:
+        id: { type: integer }
+        titulo: { type: string }
+        descripcion: { type: string, nullable: true }
+        estado: { $ref: "#/components/schemas/Estado" }
+        proyecto_id: { type: integer }
+        responsable_id: { type: integer, nullable: true }
+        etiqueta_ids:
+          type: array
+          items: { type: integer }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    TareaCrear:
+      type: object
+      required: [titulo, proyecto_id]
+      properties:
+        titulo: { type: string }
+        descripcion: { type: string, nullable: true }
+        proyecto_id: { type: integer }
+        responsable_id: { type: integer, nullable: true }
+        etiqueta_ids:
+          type: array
+          items: { type: integer }
+    TareaActualizar:
+      type: object
+      properties:
+        titulo: { type: string }
+        descripcion: { type: string, nullable: true }
+        responsable_id: { type: integer, nullable: true }
+        etiqueta_ids:
+          type: array
+          items: { type: integer }
+
+    Comentario:
+      type: object
+      properties:
+        id: { type: integer }
+        tarea_id: { type: integer }
+        autor_id: { type: integer }
+        texto: { type: string }
+        created_at: { type: string, format: date-time }
+    ComentarioCrear:
+      type: object
+      required: [autor_id, texto]
+      properties:
+        autor_id: { type: integer }
+        texto: { type: string }
+
+    Usuario:
+      type: object
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        email: { type: string, format: email }
+        equipo_ids:
+          type: array
+          items: { type: integer }
+
+    Etiqueta:
+      type: object
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        color: { type: string, nullable: true }
+
+    # --- Envolturas paginadas (items + metadata) ---
+    PaginaProyectos:
+      allOf:
+        - $ref: "#/components/schemas/Paginacion"
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Proyecto" }
+    PaginaTareas:
+      allOf:
+        - $ref: "#/components/schemas/Paginacion"
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Tarea" }
+    PaginaComentarios:
+      allOf:
+        - $ref: "#/components/schemas/Paginacion"
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Comentario" }
+    PaginaUsuarios:
+      allOf:
+        - $ref: "#/components/schemas/Paginacion"
+        - type: object
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Usuario" }
+
+    # --- Tablero (tareas agrupadas por columna) ---
+    Tablero:
+      type: object
+      properties:
+        proyecto_id: { type: integer }
+        columnas:
+          type: object
+          properties:
+            backlog:
+              type: array
+              items: { $ref: "#/components/schemas/Tarea" }
+            en_progreso:
+              type: array
+              items: { $ref: "#/components/schemas/Tarea" }
+            hecho:
+              type: array
+              items: { $ref: "#/components/schemas/Tarea" }

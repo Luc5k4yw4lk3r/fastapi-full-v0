@@ -27,6 +27,40 @@ vez tomada, se anota acá con esta plantilla.
 
 ---
 
+### [s09] Protocolo de comunicación de la API
+- **Fecha:** 2026-09-30
+- **Decisión:** **HTTP síncrono (REST/JSON)** para todo el contrato v1.
+- **Alternativas consideradas:**
+  - **HTTP síncrono (request/response)** — el cliente pide y espera la respuesta.
+  - **WebSockets** — canal bidireccional persistente para actualizaciones en tiempo real.
+  - **Colas / mensajería (async)** — desacoplar trabajo pesado o eventos entre servicios.
+- **Elección:** HTTP síncrono.
+- **Por qué:** las operaciones de TaskFlow son pedidos puntuales con respuesta inmediata
+  (crear/listar/mover/comentar, ver el tablero); no hay trabajo pesado ni necesidad de push
+  en tiempo real. HTTP es simple, cacheable y suficiente.
+- **Cuándo cambiaría:**
+  - **WebSockets/SSE** si el tablero necesitara reflejar en vivo los cambios de otros
+    usuarios sin que el cliente tenga que refrescar (colaboración en tiempo real).
+  - **Colas** si apareciera trabajo asíncrono o pesado (notificaciones, integraciones,
+    procesos batch) que convenga desacoplar del request del usuario.
+
+### [s09] Decisiones del contrato v1
+- **Fecha:** 2026-09-30
+- **Decisión:** contrato escrito en **OpenAPI 3.1 (YAML)** en `docs/api-v1.yaml`, con:
+  recursos en **plural y en español** (`/v1/tareas`, `/v1/proyectos`, ...), **versionado `/v1`**,
+  cambio de estado como acción **`POST /v1/tareas/{id}/mover`** (mismo nombre que s05), y
+  **paginación `limit`/`offset`** con filtros y orden por query params.
+- **Alternativas consideradas:**
+  - Formato: OpenAPI YAML vs tabla Markdown vs ambos → **OpenAPI YAML** (estándar, alimenta el Swagger de s10).
+  - Idioma de recursos: español vs inglés → **español** (coherente con el dominio).
+  - Mover estado: `PATCH /v1/tareas/{id}` vs `POST .../mover` → **POST .../mover** (continuidad con s05).
+  - Paginación: limit/offset vs page/size vs cursor → **limit/offset** (simple y suficiente).
+- **Por qué:** unifica el vocabulario con el dominio, da continuidad al endpoint ya conocido y
+  mantiene el contrato simple y verificable.
+- **Consecuencias / a revisar más adelante:** `POST .../mover` se aparta del REST puro (se aceptó
+  por continuidad); si el volumen creciera mucho, la paginación podría migrar a cursor. La
+  implementación completa es s10.
+
 ### [s08] Endpoint de lectura para agentes: forma autocontenida
 - **Fecha:** 2026-09-30
 - **Decisión:** un endpoint que devuelve el **tablero de un proyecto autocontenido**

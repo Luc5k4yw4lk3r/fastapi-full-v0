@@ -71,6 +71,12 @@ python scripts/client.py
 
 ## Estado
 
+**s09 — Contrato de la API (top-down).** Se diseñó el **contrato v1 antes de implementarlo**:
+`docs/api-v1.yaml` (OpenAPI 3.1) con recursos en plural y en español, versionado `/v1`,
+paginación/filtros/orden por query params y el cambio de estado como acción
+`POST /v1/tareas/{id}/mover`. Se registró la **decisión de protocolo** (HTTP síncrono; cuándo
+entrarían WebSockets o colas) en `docs/trade-offs.md`. La implementación es s10.
+
 **s08 — Datos para agentes.** Se documentó la **frescura y el ciclo de vida** de los datos
 (`docs/datos.md`), se agregó un script de **seeds realistas idempotente** (`scripts/seed.py`:
 equipos, usuarios con membresías, proyectos, etiquetas, tareas y comentarios) y un **endpoint
