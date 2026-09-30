@@ -46,7 +46,7 @@ sesión están en [`CLAUDE.md`](./CLAUDE.md).
 - **s10** cierra el backend.
 - **s12** es la versión entregable (TaskFlow full-stack).
 
-## Cómo correr (s05)
+## Cómo correr
 
 ```bash
 # 1. Entorno e instalación
@@ -70,6 +70,14 @@ python scripts/client.py
 ```
 
 ## Estado
+
+**s10 — API v1 completa (cierra el backend).** Se implementó el contrato de s09 sobre
+PostgreSQL: CRUD de proyectos y tareas, mover estado (`POST /v1/tareas/{id}/mover`), asignar
+responsable (PATCH), comentarios, y tablero con filtros/orden/paginación, más lecturas de
+apoyo (`/v1/usuarios`, `/v1/etiquetas`). Se verificó que la implementación cubre el contrato
+(17/17 endpoints), con Swagger en `/docs`. Se retiró el `/tasks` prototipo de s05 (reemplazado
+por `/v1/tareas`) y se mantiene el `/agent/...` de s08. Decisión **REST vs GraphQL** en
+`docs/trade-offs.md`. El backend queda cerrado; el frontend es s11-s12.
 
 **s09 — Contrato de la API (top-down).** Se diseñó el **contrato v1 antes de implementarlo**:
 `docs/api-v1.yaml` (OpenAPI 3.1) con recursos en plural y en español, versionado `/v1`,

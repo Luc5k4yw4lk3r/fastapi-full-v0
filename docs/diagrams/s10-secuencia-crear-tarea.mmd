@@ -1,0 +1,35 @@
+%% s10 — Secuencia de un endpoint completo punta a punta: POST /v1/tareas (crear tarea).
+%% Muestra el paso por todas las capas, las validaciones de referencias y la transacción,
+%% terminando en PostgreSQL. Es representativo del resto de los endpoints de escritura.
+sequenceDiagram
+    autonumber
+    actor Cliente
+    participant Uvicorn
+    participant Router as Router (/v1/tareas)
+    participant Service as ServicioTareas
+    participant RTar as RepoTareas
+    participant RRef as Repos (Proyectos/Usuarios/Etiquetas)
+    participant DB as PostgreSQL
+
+    Cliente->>Uvicorn: POST /v1/tareas { titulo, proyecto_id, ... }
+    Uvicorn->>Router: request ASGI
+    Note over Router: Pydantic valida el body (TareaCrear)<br/>si es inválido -> 422
+    Router->>Service: crear_tarea(Tarea)
+    Service->>RRef: existe(proyecto_id) / existe(responsable_id) / ids_inexistentes(etiquetas)
+    RRef->>DB: SELECT ...
+    DB-->>RRef: filas
+    RRef-->>Service: ok / faltante
+    alt alguna referencia no existe
+        Service-->>Router: raise (Proyecto/Usuario/Etiqueta)NoEncontrado
+        Router-->>Cliente: 404 (exception handler)
+    else referencias válidas
+        Note over Service: fuerza id=None y estado=BACKLOG
+        Service->>RTar: crear(Tarea)  (map dominio->ORM)
+        RTar->>DB: INSERT INTO tareas ... (flush)
+        DB-->>RTar: id + timestamps
+        RTar-->>Service: Tarea (map ORM->dominio)
+        Service->>DB: COMMIT (transacción)
+        Service-->>Router: Tarea creada
+        Router-->>Uvicorn: 201 + JSON
+        Uvicorn-->>Cliente: 201 Created
+    end

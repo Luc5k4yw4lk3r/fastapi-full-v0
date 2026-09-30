@@ -74,7 +74,10 @@ class ProyectoORM(Base):
     )
 
     equipo: Mapped["EquipoORM"] = relationship(back_populates="proyectos")
-    tareas: Mapped[list["TareaORM"]] = relationship(back_populates="proyecto")
+    # Borrar un proyecto borra sus tareas (y, en cascada, sus comentarios).
+    tareas: Mapped[list["TareaORM"]] = relationship(
+        back_populates="proyecto", cascade="all, delete-orphan"
+    )
 
 
 class TareaORM(Base):
@@ -96,7 +99,10 @@ class TareaORM(Base):
 
     proyecto: Mapped["ProyectoORM"] = relationship(back_populates="tareas")
     responsable: Mapped["UsuarioORM | None"] = relationship()
-    comentarios: Mapped[list["ComentarioORM"]] = relationship(back_populates="tarea")
+    # Borrar una tarea borra sus comentarios.
+    comentarios: Mapped[list["ComentarioORM"]] = relationship(
+        back_populates="tarea", cascade="all, delete-orphan"
+    )
     etiquetas: Mapped[list["EtiquetaORM"]] = relationship(
         secondary=tarea_etiqueta, back_populates="tareas"
     )

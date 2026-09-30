@@ -9,7 +9,7 @@ from app.models.base import EntidadConTiempos
 
 
 class Proyecto(EntidadConTiempos):
-    id: int
+    id: int | None = None  # lo asigna el repositorio al crear
     nombre: str
     equipo_id: int
     descripcion: str | None = None

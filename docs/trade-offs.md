@@ -27,6 +27,22 @@ vez tomada, se anota acá con esta plantilla.
 
 ---
 
+### [s10] REST vs GraphQL para la API v1
+- **Fecha:** 2026-09-30
+- **Decisión:** **REST** (JSON sobre HTTP), implementando el contrato de s09.
+- **Alternativas consideradas:**
+  - **REST** — recursos bien definidos y acotados (proyectos, tareas, comentarios, tablero),
+    verbos HTTP, códigos de estado, Swagger automático con FastAPI y cacheabilidad HTTP.
+  - **GraphQL** — un único endpoint con queries flexibles donde el cliente elige los campos;
+    potente para grafos de datos muy variables y para evitar over/under-fetching.
+- **Elección:** REST.
+- **Por qué:** los accesos de TaskFlow son sobre recursos claros y estables; REST es simple,
+  se documenta solo (Swagger) y aprovecha la caché HTTP. GraphQL agregaría schema, resolvers
+  y el problema N+1 sin un beneficio real en este dominio.
+- **Consecuencias / a revisar más adelante:** si el frontend necesitara consultas muy variables
+  o combinar muchos recursos en una sola llamada para minimizar round-trips, se podría evaluar
+  GraphQL o endpoints agregados (ya hicimos uno pensado para agentes en s08).
+
 ### [s09] Protocolo de comunicación de la API
 - **Fecha:** 2026-09-30
 - **Decisión:** **HTTP síncrono (REST/JSON)** para todo el contrato v1.

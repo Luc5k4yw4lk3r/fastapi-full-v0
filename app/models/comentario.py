@@ -9,7 +9,7 @@ from app.models.base import EntidadConTiempos
 
 
 class Comentario(EntidadConTiempos):
-    id: int
+    id: int | None = None  # lo asigna el repositorio al crear
     tarea_id: int
     autor_id: int
     texto: str

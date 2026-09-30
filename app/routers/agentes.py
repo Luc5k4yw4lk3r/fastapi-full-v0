@@ -13,7 +13,7 @@ from app.db.database import get_db
 from app.models.tablero import TableroAgente
 from app.repositories.tablero_repository import RepositorioTableroSQL
 from app.services.tablero_service import ServicioTablero
-from app.services.tarea_service import ProyectoNoEncontrado
+from app.services.errores import ProyectoNoEncontrado
 
 router = APIRouter(prefix="/agent", tags=["agentes"])
 

@@ -7,7 +7,7 @@ service de tareas) si el proyecto no existe, para que el router responda 404.
 
 from app.models.tablero import TableroAgente
 from app.repositories.tablero_repository import RepositorioTableroSQL
-from app.services.tarea_service import ProyectoNoEncontrado
+from app.services.errores import ProyectoNoEncontrado
 
 
 class ServicioTablero:

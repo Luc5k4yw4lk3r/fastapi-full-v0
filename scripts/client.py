@@ -1,9 +1,9 @@
-"""Cliente mínimo de TaskFlow (s05).
+"""Cliente mínimo de TaskFlow contra la API v1 (s10).
 
-Script con httpx que ejercita los tres endpoints de punta a punta contra un servidor
-corriendo en localhost:8000: crea un par de tareas, lista el tablero, mueve una tarea de
-estado y vuelve a listar. Sirve para probar la API sin depender del navegador ni de
-Swagger. Uso: `python scripts/client.py` (con el servidor levantado).
+Script con httpx que ejercita los endpoints principales de /v1 de punta a punta contra un
+servidor en localhost:8000: crea un par de tareas, lista el tablero, mueve una tarea,
+comenta y consulta el tablero del proyecto. Uso: `python scripts/client.py`
+(con el servidor levantado y los seeds cargados).
 """
 
 import httpx
@@ -16,29 +16,28 @@ def main() -> None:
         print("== health ==")
         print(client.get("/health").json())
 
-        print("\n== crear tareas ==")
-        t1 = client.post("/tasks", json={"titulo": "Diseñar el tablero"}).json()
+        print("\n== crear tareas (proyecto 1) ==")
+        t1 = client.post("/v1/tareas", json={"titulo": "Diseñar el tablero"}).json()
         t2 = client.post(
-            "/tasks",
+            "/v1/tareas",
             json={"titulo": "Escribir el README", "descripcion": "Breve"},
         ).json()
         print(t1)
         print(t2)
 
-        print("\n== listar tareas ==")
-        for tarea in client.get("/tasks").json():
-            print(tarea)
+        print("\n== listar tareas (paginado) ==")
+        print(client.get("/v1/tareas", params={"proyecto_id": 1, "limit": 5}).json())
 
         print("\n== mover la primera tarea a 'en progreso' ==")
-        movida = client.post(
-            f"/tasks/{t1['id']}/move",
-            json={"estado": "en progreso"},
-        ).json()
-        print(movida)
+        print(client.post(f"/v1/tareas/{t1['id']}/mover", json={"estado": "en progreso"}).json())
 
-        print("\n== listar tareas (después de mover) ==")
-        for tarea in client.get("/tasks").json():
-            print(tarea)
+        print("\n== comentar la primera tarea (autor 1) ==")
+        print(client.post(f"/v1/tareas/{t1['id']}/comentarios", json={"autor_id": 1, "texto": "Arranco"}).json())
+
+        print("\n== tablero del proyecto 1 ==")
+        tablero = client.get("/v1/proyectos/1/tablero").json()
+        for columna, tareas in tablero["columnas"].items():
+            print(f"  {columna}: {[t['titulo'] for t in tareas]}")
 
 
 if __name__ == "__main__":
