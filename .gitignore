@@ -18,3 +18,6 @@ env/
 
 # Sistema operativo
 .DS_Store
+
+# Artefactos de Playwright MCP (verificación)
+.playwright-mcp/

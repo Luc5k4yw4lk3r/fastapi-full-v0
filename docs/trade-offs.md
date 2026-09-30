@@ -27,6 +27,21 @@ vez tomada, se anota acá con esta plantilla.
 
 ---
 
+### [s11] Estrategia de render del frontend: DOM a mano vs re-render total
+- **Fecha:** 2026-09-30
+- **Decisión:** **manipular el DOM a mano** — al mover una tarjeta se mueve el nodo existente
+  (`appendChild`) y al crear se agrega un nodo nuevo; el array se mantiene en sincronía.
+- **Alternativas consideradas:**
+  - **DOM a mano** — control fino, se aprende la API del DOM (createElement/appendChild/mover nodos).
+  - **Re-renderizar todo desde el array** — el array es la única fuente de verdad; ante cualquier
+    cambio se limpia y reconstruye el tablero entero.
+- **Elección:** DOM a mano.
+- **Por qué:** es el objetivo pedagógico de s11 (entender HTML → DOM → render sin frameworks) y
+  hace explícito el costo de mantener sincronizados el estado y el DOM.
+- **Consecuencias / a revisar más adelante:** hay dos cosas que mantener en sincronía (array y DOM);
+  a medida que crece la app, el re-render total (o un framework como React, cierre de s12) evita ese
+  acoplamiento a cambio de reconstruir más nodos.
+
 ### [s10] REST vs GraphQL para la API v1
 - **Fecha:** 2026-09-30
 - **Decisión:** **REST** (JSON sobre HTTP), implementando el contrato de s09.

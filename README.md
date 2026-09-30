@@ -71,6 +71,12 @@ python scripts/client.py
 
 ## Estado
 
+**s11 — Frontend: del HTML al DOM.** Tablero en `frontend/` (`index.html` + `app.js`) con
+**vanilla JS**, estático y aislado de la API: las tareas son un array hardcodeado, las tarjetas
+se generan con `createElement`/`appendChild`, un click mueve la tarjeta de columna (mueve el nodo
+del DOM) y un form crea tareas en memoria. Sin fetch, sin frameworks. Se abre directo con
+`file://frontend/index.html`. La conexión a la API es s12.
+
 **s10 — API v1 completa (cierra el backend).** Se implementó el contrato de s09 sobre
 PostgreSQL: CRUD de proyectos y tareas, mover estado (`POST /v1/tareas/{id}/mover`), asignar
 responsable (PATCH), comentarios, y tablero con filtros/orden/paginación, más lecturas de

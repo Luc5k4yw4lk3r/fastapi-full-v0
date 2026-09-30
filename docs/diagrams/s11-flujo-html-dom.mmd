@@ -1,0 +1,29 @@
+%% s11 — Flujo HTML -> DOM -> render del tablero (frontend vanilla JS, sin API).
+%% El array de tareas en memoria es la fuente de datos; app.js crea/mueve nodos del DOM
+%% a mano. No hay fetch ni backend en esta sesión.
+flowchart TD
+    HTML["index.html<br/>(3 columnas + form + &lt;script&gt;)"]
+    Navegador["El navegador parsea el HTML<br/>y construye el DOM"]
+    AppJS["app.js se ejecuta"]
+    Estado[("Array de tareas<br/>(estado en memoria)")]
+    Render["renderInicial()<br/>createElement + appendChild"]
+    DOM["DOM del tablero<br/>(tarjetas en columnas)"]
+
+    HTML --> Navegador --> AppJS
+    AppJS --> Estado
+    AppJS --> Render
+    Estado -->|lee| Render
+    Render -->|inserta nodos| DOM
+
+    subgraph Interaccion["Interacción del usuario"]
+        Click["click en tarjeta"]
+        Submit["submit del form"]
+    end
+
+    Click -->|avanzarEstado| MoverNodo["mueve el NODO existente<br/>columnaDe(nuevo).appendChild(nodo)"]
+    MoverNodo --> Estado
+    MoverNodo --> DOM
+
+    Submit -->|agregarTarea| NuevoNodo["push al array +<br/>crearTarjeta() + appendChild"]
+    NuevoNodo --> Estado
+    NuevoNodo --> DOM
