@@ -1,0 +1,12 @@
+# Dependencias de TaskFlow (Python 3.12)
+#
+# Se agregan de forma incremental, en la sesión que las introduce, para no adelantar
+# alcance. Guía prevista:
+#   s05 -> fastapi, uvicorn[standard], httpx   (prototipo en memoria + cliente)
+#   s07 -> sqlalchemy, psycopg[binary]          (PostgreSQL real vía ORM)
+#
+# Instalación (una vez que haya dependencias):
+#   python3.12 -m venv .venv && source .venv/bin/activate
+#   pip install -r requirements.txt
+#
+# (Todavía sin paquetes: el prototipo se construye en s05.)
