@@ -11,6 +11,7 @@ Ejecutar con: `uvicorn app.main:app --env-file .env`.
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import select
 
@@ -47,6 +48,15 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="TaskFlow", version="1.0.0", lifespan=lifespan)
+
+# CORS: el frontend se sirve en otro puerto (:3000), así que el navegador exige que la API
+# autorice ese origen. Permitimos solo el front de desarrollo (no comodín).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(api_v1.router)
 app.include_router(agentes.router)

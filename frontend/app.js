@@ -1,29 +1,26 @@
-// TaskFlow — Frontend del tablero (s11)
+// TaskFlow — Frontend del tablero (s12)
 //
-// Tablero ESTÁTICO y AISLADO: los datos son un array hardcodeado y toda la interacción
-// manipula el DOM a mano (createElement / appendChild / mover nodos). Sin fetch, sin API,
-// sin frameworks. El objetivo es entender el flujo HTML -> DOM -> render.
+// Ahora el tablero se conecta a la API v1 real (s10) con fetch + async/await.
+// Mantenemos el enfoque de s11 (manipular el DOM a mano: crear/mover nodos), pero cada
+// acción se confirma contra el servidor y el estado del cliente (array `tareas`) se
+// mantiene en sincronía. La API corre en otro puerto (8000) -> por eso hace falta CORS.
 
-// --- Estado en memoria (fuente de datos hardcodeada) ---
+const API = "http://localhost:8000";
+const PROYECTO_ID = 1;
 const ESTADOS = ["backlog", "en progreso", "hecho"];
 
-let siguienteId = 4;
-const tareas = [
-  { id: 1, titulo: "Diseñar el tablero", descripcion: "Columnas y tarjetas", estado: "hecho" },
-  { id: 2, titulo: "Mover tarjetas con click", descripcion: "", estado: "en progreso" },
-  { id: 3, titulo: "Escribir el README", descripcion: "Breve", estado: "backlog" },
-];
+// Estado del cliente: la lista de tareas que tenemos cargada en memoria.
+let tareas = [];
 
-// Mapa estado -> elemento de columna (el id del DOM reemplaza el espacio por guión).
 function columnaDe(estado) {
   return document.getElementById("col-" + estado.replace(" ", "-"));
 }
 
-// --- Render: crea el nodo de una tarjeta a partir de una tarea ---
+// --- Crea el nodo DOM de una tarjeta ---
 function crearTarjeta(tarea) {
   const div = document.createElement("div");
   div.className = "tarjeta";
-  div.dataset.id = tarea.id; // guardamos el id en el DOM para reconocer la tarjeta
+  div.dataset.id = tarea.id;
 
   const titulo = document.createElement("div");
   titulo.className = "titulo";
@@ -37,44 +34,79 @@ function crearTarjeta(tarea) {
     div.appendChild(desc);
   }
 
-  // Click: avanza la tarea a la siguiente columna (y vuelve a backlog al final).
-  div.addEventListener("click", () => avanzarEstado(tarea, div));
+  div.addEventListener("click", () => mover(tarea, div));
   return div;
 }
 
-// --- Mover: cambia el estado y MUEVE el nodo existente a la columna destino ---
-function avanzarEstado(tarea, nodo) {
-  const indice = ESTADOS.indexOf(tarea.estado);
-  const nuevoEstado = ESTADOS[(indice + 1) % ESTADOS.length];
-  tarea.estado = nuevoEstado; // actualizamos el estado en memoria
-  columnaDe(nuevoEstado).appendChild(nodo); // movemos el mismo nodo de columna
-}
-
-// --- Crear: agrega una tarea al array y una tarjeta nueva al DOM (columna backlog) ---
-function agregarTarea(titulo, descripcion) {
-  const tarea = { id: siguienteId++, titulo, descripcion, estado: "backlog" };
-  tareas.push(tarea);
-  columnaDe(tarea.estado).appendChild(crearTarjeta(tarea));
-}
-
-// --- Render inicial: pinta las tarjetas hardcodeadas en sus columnas ---
-function renderInicial() {
+// --- Pinta el tablero completo a partir del estado (solo en la carga inicial) ---
+function pintarTablero() {
+  for (const estado of ESTADOS) {
+    // Limpia las tarjetas previas de la columna (conserva el <h2>).
+    columnaDe(estado).querySelectorAll(".tarjeta").forEach((n) => n.remove());
+  }
   for (const tarea of tareas) {
     columnaDe(tarea.estado).appendChild(crearTarjeta(tarea));
   }
 }
 
-// --- Cableado del form: submit crea la tarea en memoria (sin recargar la página) ---
+// --- Cargar el tablero real desde la API (GET) ---
+async function cargarTablero() {
+  const resp = await fetch(`${API}/v1/tareas?proyecto_id=${PROYECTO_ID}&limit=100`);
+  if (!resp.ok) {
+    console.error("No se pudo cargar el tablero:", resp.status);
+    return;
+  }
+  const pagina = await resp.json();
+  tareas = pagina.items;
+  pintarTablero();
+}
+
+// --- Mover: confirma el nuevo estado en la API (POST .../mover) y mueve el nodo ---
+async function mover(tarea, nodo) {
+  const indice = ESTADOS.indexOf(tarea.estado);
+  const nuevoEstado = ESTADOS[(indice + 1) % ESTADOS.length];
+  const resp = await fetch(`${API}/v1/tareas/${tarea.id}/mover`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ estado: nuevoEstado }),
+  });
+  if (!resp.ok) {
+    console.error("No se pudo mover la tarea:", resp.status);
+    return;
+  }
+  const actualizada = await resp.json();
+  tarea.estado = actualizada.estado; // sincroniza el estado del cliente
+  columnaDe(tarea.estado).appendChild(nodo); // mueve el mismo nodo de columna
+}
+
+// --- Crear: POST a la API y, si sale bien, agrega la tarjeta al DOM ---
+async function crear(titulo, descripcion) {
+  const resp = await fetch(`${API}/v1/tareas`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ titulo, descripcion, proyecto_id: PROYECTO_ID }),
+  });
+  if (!resp.ok) {
+    console.error("No se pudo crear la tarea:", resp.status);
+    return;
+  }
+  const creada = await resp.json();
+  tareas.push(creada);
+  columnaDe(creada.estado).appendChild(crearTarjeta(creada));
+}
+
+// --- Cableado del form ---
 const form = document.getElementById("form-tarea");
 form.addEventListener("submit", (evento) => {
-  evento.preventDefault(); // evita que el navegador recargue al enviar el form
+  evento.preventDefault();
   const inputTitulo = document.getElementById("input-titulo");
   const inputDesc = document.getElementById("input-desc");
   const titulo = inputTitulo.value.trim();
   if (!titulo) return;
-  agregarTarea(titulo, inputDesc.value.trim());
+  crear(titulo, inputDesc.value.trim());
   form.reset();
   inputTitulo.focus();
 });
 
-renderInicial();
+// Carga inicial del tablero desde la API.
+cargarTablero();

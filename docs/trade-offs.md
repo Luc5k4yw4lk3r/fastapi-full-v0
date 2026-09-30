@@ -27,6 +27,23 @@ vez tomada, se anota acá con esta plantilla.
 
 ---
 
+### [s12] CORS: orígenes permitidos por la API
+- **Fecha:** 2026-09-30
+- **Contexto:** el frontend se sirve en `http://localhost:3000` y la API en
+  `http://localhost:8000`. Al ser orígenes distintos, el navegador bloquea el `fetch` con
+  *"No 'Access-Control-Allow-Origin' header is present"* hasta que la API lo autorice.
+- **Decisión:** agregar `CORSMiddleware` permitiendo **solo el origen del frontend de
+  desarrollo** (`http://localhost:3000` y `http://127.0.0.1:3000`), con métodos y headers `*`.
+- **Alternativas consideradas:**
+  - **Solo el origen del frontend** — explícito; solo ese front puede llamar a la API.
+  - **Comodín `*`** — cualquier origen; más simple para demos, pero laxo y no admite credenciales.
+- **Elección:** solo el origen del frontend.
+- **Por qué:** es lo mínimo necesario para que funcione el front y deja la política acotada y
+  clara; el comodín abriría la API a cualquier sitio sin necesidad.
+- **Consecuencias / a revisar más adelante:** al desplegar habrá que sumar el/los origen(es)
+  reales del frontend; si se usaran cookies/credenciales, hay que evitar `*` y setear
+  `allow_credentials=True` con orígenes explícitos.
+
 ### [s11] Estrategia de render del frontend: DOM a mano vs re-render total
 - **Fecha:** 2026-09-30
 - **Decisión:** **manipular el DOM a mano** — al mover una tarjeta se mueve el nodo existente

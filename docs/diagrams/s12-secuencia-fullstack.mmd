@@ -1,0 +1,23 @@
+%% s12 — Secuencia del flujo full-stack: DOM -> fetch -> API -> BD -> render.
+%% Ejemplo: mover una tarjeta con click. El frontend (:3000) llama a la API (:8000);
+%% el navegador exige CORS, por eso la API responde con los headers Access-Control-*.
+sequenceDiagram
+    autonumber
+    actor Usuario
+    participant DOM as DOM (frontend :3000)
+    participant JS as app.js (fetch)
+    participant API as API FastAPI (:8000)
+    participant DB as PostgreSQL
+
+    Usuario->>DOM: click en una tarjeta
+    DOM->>JS: handler mover(tarea, nodo)
+    JS->>API: POST /v1/tareas/{id}/mover { estado }
+    Note over API: CORSMiddleware valida el Origin<br/>(http://localhost:3000) y responde<br/>con Access-Control-Allow-Origin
+    API->>DB: UPDATE tareas SET estado=... (transacción, COMMIT)
+    DB-->>API: fila actualizada
+    API-->>JS: 200 + JSON (tarea)
+    JS->>JS: actualiza el estado del cliente (tarea.estado)
+    JS->>DOM: mueve el nodo a la columna destino (appendChild)
+    DOM-->>Usuario: la tarjeta aparece en la nueva columna
+
+    Note over Usuario,DB: La carga inicial es análoga: GET /v1/tareas -> render;<br/>crear es POST /v1/tareas -> nueva tarjeta.

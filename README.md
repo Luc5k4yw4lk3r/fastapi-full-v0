@@ -67,9 +67,20 @@ uvicorn app.main:app --reload --env-file .env
 
 # 5. Cliente de prueba (en otra terminal, con el server arriba)
 python scripts/client.py
+
+# 6. Frontend full-stack (s12): servirlo en otro puerto y abrir en el navegador
+cd frontend && python -m http.server 3000   # -> http://localhost:3000
+#   la API (:8000) permite CORS desde http://localhost:3000
 ```
 
 ## Estado
+
+**s12 — TaskFlow full-stack (ENTREGABLE FINAL).** El frontend vanilla se conecta a la API v1
+con `fetch`/async-await: carga el tablero (`GET`), crea (`POST`) y mueve (`POST .../mover`),
+manteniendo el estado del cliente. Se sirve en `:3000` y la API en `:8000`, por lo que se
+resolvió **CORS** con `CORSMiddleware` (solo el origen del frontend). Full-stack verificado
+punta a punta (frontend + API + PostgreSQL). Cierre conceptual (SPA vs multipágina, React/Next)
+en `docs/cierre-conceptual.md`.
 
 **s11 — Frontend: del HTML al DOM.** Tablero en `frontend/` (`index.html` + `app.js`) con
 **vanilla JS**, estático y aislado de la API: las tareas son un array hardcodeado, las tarjetas
