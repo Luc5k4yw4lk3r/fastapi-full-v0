@@ -27,6 +27,34 @@ vez tomada, se anota acá con esta plantilla.
 
 ---
 
+### [s08] Endpoint de lectura para agentes: forma autocontenida
+- **Fecha:** 2026-09-30
+- **Decisión:** un endpoint que devuelve el **tablero de un proyecto autocontenido**
+  (`GET /agent/proyectos/{id}/tablero`): proyecto + equipo + tareas agrupadas por columna,
+  con responsable, etiquetas y comentarios ya resueltos (nombres, no ids), más una marca de
+  frescura `generado_en` y un resumen.
+- **Alternativas consideradas:**
+  - **Tablero de proyecto autocontenido** — el agente entiende todo el estado en una llamada.
+  - **Contexto de una sola tarea** — más acotado; requiere varias llamadas para ver el tablero.
+- **Elección:** tablero de proyecto autocontenido.
+- **Por qué:** minimiza el ida y vuelta del agente y le da el contexto resuelto de una vez,
+  que es justo lo que necesita para razonar sobre el estado.
+- **Consecuencias / a revisar más adelante:** la respuesta es más pesada y denormalizada;
+  para tableros muy grandes convendría paginar/filtrar (eso se formaliza en el contrato de s09/s10).
+
+### [s08] Estrategia de seeds: idempotente por clave natural
+- **Fecha:** 2026-09-30
+- **Decisión:** `scripts/seed.py` **idempotente por clave natural** (nombre/email/título),
+  sin ids fijos.
+- **Alternativas consideradas:**
+  - **Reset (truncate + insert)** — estado 100% reproducible, pero destruye datos existentes.
+  - **Idempotente (insert si falta)** — conserva lo que haya y no duplica.
+- **Elección:** idempotente.
+- **Por qué:** se puede correr varias veces sin romper datos ni la app, y al no usar ids fijos
+  las secuencias de Postgres avanzan bien (evita colisiones con las filas creadas por la API).
+- **Consecuencias / a revisar más adelante:** el estado final depende de lo que ya existiera;
+  si se quiere un dataset limpio y fijo, se puede truncar antes de sembrar.
+
 ### [s07] Stack de ORM y separación dominio/persistencia
 - **Fecha:** 2026-09-30
 - **Decisión:** SQLAlchemy 2.0 con modelos ORM **separados** de las entidades de dominio Pydantic; el repositorio mapea ORM ⇄ dominio. Driver psycopg3 síncrono.

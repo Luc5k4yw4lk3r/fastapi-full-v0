@@ -57,15 +57,26 @@ pip install -r requirements.txt
 cp .env.example .env          # si el puerto 5432 está ocupado, cambiá POSTGRES_PORT (y DATABASE_URL)
 docker compose up -d
 
-# 3. Servidor de la API (--env-file carga DATABASE_URL; al iniciar crea el esquema y el seed)
+# 3. Datos de ejemplo realistas (idempotente; carga DATABASE_URL desde .env)
+python scripts/seed.py
+
+# 4. Servidor de la API (--env-file carga DATABASE_URL; al iniciar crea el esquema y el seed mínimo)
 uvicorn app.main:app --reload --env-file .env
 #   -> Swagger en http://127.0.0.1:8000/docs
+#   -> Tablero para agentes: GET /agent/proyectos/1/tablero
 
-# 4. Cliente de prueba (en otra terminal, con el server arriba)
+# 5. Cliente de prueba (en otra terminal, con el server arriba)
 python scripts/client.py
 ```
 
 ## Estado
+
+**s08 — Datos para agentes.** Se documentó la **frescura y el ciclo de vida** de los datos
+(`docs/datos.md`), se agregó un script de **seeds realistas idempotente** (`scripts/seed.py`:
+equipos, usuarios con membresías, proyectos, etiquetas, tareas y comentarios) y un **endpoint
+de lectura para agentes** autocontenido: `GET /agent/proyectos/{id}/tablero` (proyecto + equipo
++ tareas por columna con responsable, etiquetas y comentarios resueltos, con marca de frescura).
+Sin RAG ni vectores.
 
 **s07 — PostgreSQL real.** La app se conecta a Postgres con **SQLAlchemy 2.0** (ORM en
 `app/db/models.py`, separado del dominio Pydantic; el repository mapea ORM ⇄ dominio). El
