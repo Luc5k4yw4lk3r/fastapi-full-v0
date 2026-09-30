@@ -1,0 +1,33 @@
+# Infraestructura de datos de TaskFlow.
+# En s05 solo levanta PostgreSQL; la app FastAPI todavía NO se conecta (usa memoria).
+# La app empezará a conectarse en s07. Es la única forma soportada de levantar la base.
+#
+# Uso:
+#   cp .env.example .env      # docker compose lee las variables desde .env
+#   docker compose up -d      # levanta Postgres en segundo plano
+#   docker compose ps         # ver estado
+#   docker compose down       # apagar (los datos quedan en el volumen)
+
+services:
+  db:
+    image: postgres:16
+    container_name: taskflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-taskflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskflow}
+      POSTGRES_DB: ${POSTGRES_DB:-taskflow}
+    ports:
+      # Puerto del host configurable: si el 5432 ya está ocupado por otra base,
+      # definí POSTGRES_PORT en tu .env (y ajustá DATABASE_URL en consecuencia).
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - taskflow_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-taskflow}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  taskflow_pgdata:

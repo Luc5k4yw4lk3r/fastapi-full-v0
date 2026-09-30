@@ -5,8 +5,11 @@
 #   s05 -> fastapi, uvicorn[standard], httpx   (prototipo en memoria + cliente)
 #   s07 -> sqlalchemy, psycopg[binary]          (PostgreSQL real vía ORM)
 #
-# Instalación (una vez que haya dependencias):
+# Instalación:
 #   python3.12 -m venv .venv && source .venv/bin/activate
 #   pip install -r requirements.txt
-#
-# (Todavía sin paquetes: el prototipo se construye en s05.)
+
+# --- s05 ---
+fastapi>=0.115
+uvicorn[standard]>=0.30
+httpx>=0.27

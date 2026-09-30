@@ -1,0 +1,31 @@
+%% s05 — Diagrama de componentes de TaskFlow (prototipo en memoria)
+%% Muestra la arquitectura en capas y qué es infraestructura ya presente pero
+%% todavía NO conectada (PostgreSQL). El flujo de dependencias va siempre hacia
+%% abajo: router -> service -> repository -> datos.
+graph TD
+    Cliente["Cliente httpx<br/>(scripts/client.py)"]
+    Uvicorn["Uvicorn<br/>(servidor ASGI)"]
+
+    subgraph App["Aplicación FastAPI (app/)"]
+        Router["Router<br/>app/routers/tareas.py"]
+        Service["Service<br/>app/services/tarea_service.py"]
+        RepoT["Repositorio Tareas (memoria)<br/>app/repositories/tarea_repository.py"]
+        RepoP["Repositorio Proyectos (memoria)<br/>app/repositories/proyecto_repository.py"]
+        Models["Modelos de dominio<br/>app/models/*"]
+    end
+
+    DB[("PostgreSQL<br/>(docker-compose)<br/>NO conectada aún — s07")]
+
+    Cliente -->|HTTP| Uvicorn --> Router
+    Router --> Service
+    Service --> RepoT
+    Service --> RepoP
+    Router -.usa.-> Models
+    Service -.usa.-> Models
+    RepoT -.usa.-> Models
+    RepoP -.usa.-> Models
+
+    App -. "se conectará en s07" .-> DB
+
+    classDef futuro stroke-dasharray: 5 5,fill:#f5f5f5,color:#888;
+    class DB futuro;

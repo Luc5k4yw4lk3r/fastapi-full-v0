@@ -46,8 +46,28 @@ sesión están en [`CLAUDE.md`](./CLAUDE.md).
 - **s10** cierra el backend.
 - **s12** es la versión entregable (TaskFlow full-stack).
 
+## Cómo correr (s05)
+
+```bash
+# 1. Entorno e instalación
+python3.12 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Infraestructura de datos (Postgres en Docker; la app aún NO se conecta)
+cp .env.example .env          # si el puerto 5432 está ocupado, cambiá POSTGRES_PORT
+docker compose up -d
+
+# 3. Servidor de la API
+uvicorn app.main:app --reload
+#   -> Swagger en http://127.0.0.1:8000/docs
+
+# 4. Cliente de prueba (en otra terminal, con el server arriba)
+python scripts/client.py
+```
+
 ## Estado
 
-Esqueleto inicial. La aplicación se empieza a construir en **s05**; hasta entonces las
-capas de `app/` están vacías y las dependencias se irán agregando en la sesión que las
-introduce (ver `requirements.txt`).
+**s05 — Prototipo mínimo.** API FastAPI en capas con Tarea/Proyecto en memoria
+(crear, listar y mover tareas) + cliente httpx + PostgreSQL levantando en Docker (todavía
+sin conectar). La conexión real a la base llega en s07. Las dependencias se agregan en la
+sesión que las introduce (ver `requirements.txt`).

@@ -1,0 +1,28 @@
+%% s05 — Diagrama de secuencia del ciclo de un request en TaskFlow.
+%% Ejemplo: mover una tarea de estado (POST /tasks/{id}/move). Muestra cómo la
+%% petición atraviesa las capas y vuelve, sin tocar PostgreSQL (estado en memoria).
+sequenceDiagram
+    autonumber
+    actor Cliente as Cliente (httpx)
+    participant Uvicorn
+    participant Router as Router (tareas.py)
+    participant Service as Service (tarea_service.py)
+    participant Repo as Repositorio Tareas (memoria)
+
+    Cliente->>Uvicorn: POST /tasks/1/move {estado: "en progreso"}
+    Uvicorn->>Router: request ASGI
+    Note over Router: Pydantic valida el body<br/>(estado ∈ Enum, si no -> 422)
+    Router->>Service: mover_tarea(1, EN_PROGRESO)
+    Service->>Repo: obtener(1)
+    Repo-->>Service: Tarea (o None)
+    alt tarea no existe
+        Service-->>Router: raise TareaNoEncontrada
+        Router-->>Cliente: 404 Not Found
+    else tarea existe
+        Service->>Service: tarea.estado = EN_PROGRESO
+        Service->>Repo: guardar(tarea)
+        Repo-->>Service: Tarea actualizada
+        Service-->>Router: Tarea
+        Router-->>Uvicorn: 200 OK + JSON
+        Uvicorn-->>Cliente: 200 OK + JSON
+    end
