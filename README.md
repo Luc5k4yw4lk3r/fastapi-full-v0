@@ -53,12 +53,12 @@ sesión están en [`CLAUDE.md`](./CLAUDE.md).
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# 2. Infraestructura de datos (Postgres en Docker; la app aún NO se conecta)
-cp .env.example .env          # si el puerto 5432 está ocupado, cambiá POSTGRES_PORT
+# 2. Infraestructura de datos (Postgres en Docker)
+cp .env.example .env          # si el puerto 5432 está ocupado, cambiá POSTGRES_PORT (y DATABASE_URL)
 docker compose up -d
 
-# 3. Servidor de la API
-uvicorn app.main:app --reload
+# 3. Servidor de la API (--env-file carga DATABASE_URL; al iniciar crea el esquema y el seed)
+uvicorn app.main:app --reload --env-file .env
 #   -> Swagger en http://127.0.0.1:8000/docs
 
 # 4. Cliente de prueba (en otra terminal, con el server arriba)
@@ -66,6 +66,13 @@ python scripts/client.py
 ```
 
 ## Estado
+
+**s07 — PostgreSQL real.** La app se conecta a Postgres con **SQLAlchemy 2.0** (ORM en
+`app/db/models.py`, separado del dominio Pydantic; el repository mapea ORM ⇄ dominio). El
+**ER completo** (6 entidades + 2 tablas de enlace M:N) se crea al iniciar con `create_all`
++ un seed de equipo/proyecto por defecto. Los repositorios en memoria de s05 se migraron a
+Postgres manteniendo la misma interfaz, y el service controla las **transacciones**
+(commit/rollback). Los datos ahora **persisten** entre reinicios de la app.
 
 **s06 — Decisión de almacenamiento + modelo de dominio.** Se eligió **PostgreSQL
 (relacional)** con un ADR basado en los patrones de acceso (ver `docs/trade-offs.md`), y

@@ -27,6 +27,37 @@ vez tomada, se anota acá con esta plantilla.
 
 ---
 
+### [s07] Stack de ORM y separación dominio/persistencia
+- **Fecha:** 2026-09-30
+- **Decisión:** SQLAlchemy 2.0 con modelos ORM **separados** de las entidades de dominio Pydantic; el repositorio mapea ORM ⇄ dominio. Driver psycopg3 síncrono.
+- **Alternativas consideradas:**
+  - **SQLAlchemy 2.0, ORM separado** — `TareaORM` (persistencia) distinta de `Tarea` (dominio); mapeo en el repository.
+  - **SQLModel** — una sola clase por entidad que es Pydantic + tabla; menos código pero funde dominio y persistencia.
+  - **SQL crudo (psycopg)** — control total, pero mucho boilerplate y mapeo manual para 6 entidades + M:N.
+- **Elección:** SQLAlchemy 2.0 con ORM separado.
+- **Por qué:** cumple la regla de capas de CLAUDE.md (el dominio en `app/models/` no importa SQLAlchemy), y deja el punto de mapeo explícito y testeable en la capa repository.
+- **Consecuencias / a revisar más adelante:** hay que mantener el mapeo ORM⇄dominio (funciones `_a_dominio`); a cambio, cada capa evoluciona por separado.
+
+### [s07] Gestión del esquema: create_all vs migraciones
+- **Fecha:** 2026-09-30
+- **Decisión:** crear el esquema con `Base.metadata.create_all()` al iniciar la app, más un seed mínimo (equipo/proyecto por defecto).
+- **Alternativas consideradas:**
+  - **create_all al iniciar** — simple y directo; crea lo que falte a partir de los modelos ORM.
+  - **Alembic** — migraciones versionadas (upgrade/downgrade), estándar productivo pero con más maquinaria.
+- **Elección:** create_all + seed.
+- **Por qué:** para el alcance de s07 alcanza y evita introducir conceptos de migraciones todavía.
+- **Consecuencias / a revisar más adelante:** `create_all` no versiona cambios de esquema ni altera tablas existentes; si el modelo evoluciona, Alembic entra más adelante.
+
+### [s07] Capa de datos síncrona vs asíncrona
+- **Fecha:** 2026-09-30
+- **Decisión:** capa de datos **síncrona** (endpoints `def`, `Session` de SQLAlchemy, psycopg3 sync).
+- **Alternativas consideradas:**
+  - **Síncrona** — coherente con los endpoints `def` de s05/s06, más fácil de razonar y depurar.
+  - **Asíncrona** — `async`/`AsyncSession`, mejor bajo alta concurrencia de I/O, pero propaga async por todas las capas.
+- **Elección:** síncrona.
+- **Por qué:** no hay necesidad real de async en el prototipo y mantiene el código simple; FastAPI corre los endpoints `def` en un threadpool.
+- **Consecuencias / a revisar más adelante:** si en el futuro la concurrencia de I/O fuese un cuello de botella, se evaluaría migrar a async.
+
 ## [s06] ADR-001 — Tipo de base de datos para TaskFlow
 
 - **Fecha:** 2026-09-30

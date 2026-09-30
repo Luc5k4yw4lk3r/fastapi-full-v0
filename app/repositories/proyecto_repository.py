@@ -1,24 +1,34 @@
-"""Repositorio de proyectos en memoria (s05).
+"""Repositorio de proyectos sobre PostgreSQL (s07).
 
-Guarda los proyectos en un dict indexado por id. Para el prototipo viene sembrado
-con un proyecto por defecto ("General"), así las tareas pueden referenciar un proyecto
-existente sin necesitar todavía endpoints de proyectos. En s07 esta clase se reemplaza
-por una implementación sobre PostgreSQL manteniendo la misma interfaz.
+Reemplaza al repositorio en memoria de s05 con la misma interfaz (obtener / existe).
+Trabaja sobre una Session de SQLAlchemy y mapea la fila ORM al dominio. Ya no siembra
+datos: el seed del proyecto por defecto se hace al iniciar la app (app/main.py).
 """
 
+from sqlalchemy.orm import Session
+
+from app.db.models import ProyectoORM
 from app.models.proyecto import Proyecto
 
 
-class RepositorioProyectosEnMemoria:
-    def __init__(self) -> None:
-        # Sembramos un proyecto por defecto para que las tareas tengan dónde vivir.
-        # equipo_id=1 es conceptual por ahora; el cableado real de equipos llega en s07.
-        self._proyectos: dict[int, Proyecto] = {
-            1: Proyecto(id=1, nombre="General", equipo_id=1),
-        }
+def _a_dominio(fila: ProyectoORM) -> Proyecto:
+    return Proyecto(
+        id=fila.id,
+        nombre=fila.nombre,
+        equipo_id=fila.equipo_id,
+        descripcion=fila.descripcion,
+        created_at=fila.created_at,
+        updated_at=fila.updated_at,
+    )
+
+
+class RepositorioProyectosSQL:
+    def __init__(self, session: Session) -> None:
+        self._session = session
 
     def obtener(self, proyecto_id: int) -> Proyecto | None:
-        return self._proyectos.get(proyecto_id)
+        fila = self._session.get(ProyectoORM, proyecto_id)
+        return _a_dominio(fila) if fila is not None else None
 
     def existe(self, proyecto_id: int) -> bool:
-        return proyecto_id in self._proyectos
+        return self._session.get(ProyectoORM, proyecto_id) is not None

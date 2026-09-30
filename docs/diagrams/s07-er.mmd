@@ -1,0 +1,57 @@
+%% s07 — Diagrama ER de TaskFlow en PostgreSQL.
+%% 6 entidades + 2 tablas de enlace para las relaciones M:N (usuario↔equipo, tarea↔etiqueta).
+%% Refleja los modelos ORM de app/db/models.py. Los timestamps (created_at/updated_at)
+%% se omiten por brevedad; están en todas las tablas de entidad.
+erDiagram
+    EQUIPOS ||--o{ PROYECTOS : "tiene"
+    EQUIPOS ||--o{ USUARIO_EQUIPO : ""
+    USUARIOS ||--o{ USUARIO_EQUIPO : ""
+    PROYECTOS ||--o{ TAREAS : "contiene"
+    USUARIOS ||--o{ TAREAS : "es responsable"
+    TAREAS ||--o{ COMENTARIOS : "recibe"
+    USUARIOS ||--o{ COMENTARIOS : "escribe"
+    TAREAS ||--o{ TAREA_ETIQUETA : ""
+    ETIQUETAS ||--o{ TAREA_ETIQUETA : ""
+
+    EQUIPOS {
+        int id PK
+        string nombre
+    }
+    USUARIOS {
+        int id PK
+        string nombre
+        string email UK
+    }
+    PROYECTOS {
+        int id PK
+        string nombre
+        int equipo_id FK
+        string descripcion
+    }
+    TAREAS {
+        int id PK
+        string titulo
+        string descripcion
+        string estado
+        int proyecto_id FK
+        int responsable_id FK
+    }
+    COMENTARIOS {
+        int id PK
+        int tarea_id FK
+        int autor_id FK
+        string texto
+    }
+    ETIQUETAS {
+        int id PK
+        string nombre
+        string color
+    }
+    USUARIO_EQUIPO {
+        int usuario_id PK_FK
+        int equipo_id PK_FK
+    }
+    TAREA_ETIQUETA {
+        int tarea_id PK_FK
+        int etiqueta_id PK_FK
+    }
