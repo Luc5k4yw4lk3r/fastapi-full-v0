@@ -1,0 +1,50 @@
+%% s06 — Modelo de dominio de TaskFlow (clases, aún sin persistencia).
+%% Relaciones por id (estilo FK). Cardinalidades: N:1 y M:N (realista).
+%% El diagrama ER formal (tablas, tablas de enlace) es entregable de s07.
+classDiagram
+    class Usuario {
+        +int id
+        +str nombre
+        +str email
+        +list~int~ equipo_ids
+        +datetime created_at
+        +datetime updated_at
+    }
+    class Equipo {
+        +int id
+        +str nombre
+    }
+    class Proyecto {
+        +int id
+        +str nombre
+        +int equipo_id
+        +str descripcion
+    }
+    class Tarea {
+        +int id
+        +str titulo
+        +str descripcion
+        +Estado estado
+        +int proyecto_id
+        +int responsable_id
+        +list~int~ etiqueta_ids
+    }
+    class Comentario {
+        +int id
+        +int tarea_id
+        +int autor_id
+        +str texto
+    }
+    class Etiqueta {
+        +int id
+        +str nombre
+        +str color
+    }
+
+    Usuario "N" -- "N" Equipo : membresías (equipo_ids)
+    Equipo "1" -- "N" Proyecto : tiene
+    Proyecto "1" -- "N" Tarea : contiene
+    Usuario "1" -- "N" Tarea : responsable (responsable_id)
+    Tarea "1" -- "N" Comentario : recibe
+    Usuario "1" -- "N" Comentario : autor (autor_id)
+    Tarea "N" -- "N" Etiqueta : clasifica (etiqueta_ids)

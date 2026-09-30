@@ -1,13 +1,15 @@
-"""Entidad de dominio Proyecto (mínima para s05).
+"""Entidad de dominio Proyecto (ampliada en s06).
 
-Un proyecto agrupa tareas. En s05 vive en memoria y solo tiene id y nombre; el
-modelo completo (con Equipo, dueño, etc.) se define en s06. Es una clase Pydantic
-que, según la decisión de la sesión, se usa tanto en el dominio como en el borde HTTP.
+Un proyecto pertenece a un equipo (relación N:1 por id, `equipo_id`) y agrupa tareas.
+En s05 era solo id + nombre; en s06 se completa con el dueño (equipo), descripción y
+timestamps. Sigue siendo una clase Pydantic sin persistencia (la conexión llega en s07).
 """
 
-from pydantic import BaseModel
+from app.models.base import EntidadConTiempos
 
 
-class Proyecto(BaseModel):
+class Proyecto(EntidadConTiempos):
     id: int
     nombre: str
+    equipo_id: int
+    descripcion: str | None = None

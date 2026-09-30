@@ -67,7 +67,13 @@ python scripts/client.py
 
 ## Estado
 
-**s05 — Prototipo mínimo.** API FastAPI en capas con Tarea/Proyecto en memoria
-(crear, listar y mover tareas) + cliente httpx + PostgreSQL levantando en Docker (todavía
-sin conectar). La conexión real a la base llega en s07. Las dependencias se agregan en la
-sesión que las introduce (ver `requirements.txt`).
+**s06 — Decisión de almacenamiento + modelo de dominio.** Se eligió **PostgreSQL
+(relacional)** con un ADR basado en los patrones de acceso (ver `docs/trade-offs.md`), y
+se definió el **modelo de dominio completo** como clases Pydantic en `app/models/`:
+Usuario, Equipo, Proyecto, Tarea, Comentario, Etiqueta (relaciones por id, M:N donde
+corresponde, con timestamps). Todavía **sin persistencia real**: la conexión a Postgres
+llega en s07.
+
+**s05 — Prototipo mínimo.** API FastAPI en capas con Tarea/Proyecto en memoria (crear,
+listar y mover tareas) + cliente httpx + PostgreSQL levantando en Docker (sin conectar).
+Las dependencias se agregan en la sesión que las introduce (ver `requirements.txt`).

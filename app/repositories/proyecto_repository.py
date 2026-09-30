@@ -12,8 +12,9 @@ from app.models.proyecto import Proyecto
 class RepositorioProyectosEnMemoria:
     def __init__(self) -> None:
         # Sembramos un proyecto por defecto para que las tareas tengan dónde vivir.
+        # equipo_id=1 es conceptual por ahora; el cableado real de equipos llega en s07.
         self._proyectos: dict[int, Proyecto] = {
-            1: Proyecto(id=1, nombre="General"),
+            1: Proyecto(id=1, nombre="General", equipo_id=1),
         }
 
     def obtener(self, proyecto_id: int) -> Proyecto | None:
